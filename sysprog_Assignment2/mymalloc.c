@@ -44,7 +44,7 @@ void my_free(void *);
 
 int main ()
 {
-	for (int i = 0; i < MEM_SIZE; i++)
+	/*for (int i = 0; i < MEM_SIZE; i++)
 	{
 		void * ptr = my_malloc(1);
 		
@@ -54,8 +54,46 @@ int main ()
 			return EXIT_SUCCESS;
 		}
 		
-		/*my_free(ptr);*/
-	}
+	}*/
+
+	struct point {
+		int x;
+		int y;
+	};
+
+	struct point3d {
+		int x;
+		int y;
+		int z;
+	};
+
+
+	struct point * p1 = my_malloc(sizeof(struct point));
+	struct point * p2 = my_malloc(sizeof(struct point));
+	struct point * p3 = my_malloc(sizeof(struct point));
+	struct point3d * p4 = my_malloc(sizeof(struct point3d));
+	struct point * p5 = my_malloc(sizeof(struct point));
+	my_free(p4);
+	my_free(p2);
+	my_free(p3);
+
+	mem_region * r1 = (mem_region *) (&memory);
+	mem_region * r2 = (mem_region *) (((int) &memory) + sizeof(mem_region) + sizeof(struct point));
+	mem_region * r3 = (mem_region *) (((int) &memory) + (sizeof(mem_region) + sizeof(struct point)) * 2);
+	mem_region * r4 = (mem_region *) (((int) &memory) + (sizeof(mem_region) + sizeof(struct point)) * 3);
+	mem_region * r5 = (mem_region *) (((int) &memory) + (sizeof(mem_region) + sizeof(struct point)) * 3 + (sizeof(mem_region) + sizeof(struct point3d)));
+
+
+	int i = 0;
+
+	p5->x = 0x69;
+	p5->y = 0x420;
+
+	
+	
+	my_free(p5);
+	
+	
 	return EXIT_SUCCESS;
 }
 
@@ -206,7 +244,11 @@ void my_free(void * pointer)
 				cur_region = prev_region;
 			}
 			// Finding the next region in memory:
-			mem_region * next_region = (mem_region *) (((int) &memory) + mem_offset + cur_region->size + sizeof(mem_region));
+			mem_region * next_region = (mem_region *) (
+				((int) cur_region) + 
+				sizeof(mem_region) +
+				cur_region->size
+			);
 			if (((int) next_region) - ((int) &memory) < MEM_SIZE)
 			{
 				// If the next region is a valid location in RAM, then we check if it is a FREED region,
