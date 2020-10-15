@@ -44,7 +44,6 @@ typedef struct _ {
 //		be subdivided into other mem_regions, followed by user data
 char memory[ MEM_SIZE ] = { 0xfc, 0x0f, 0x00 };
 
-
 int main ()
 {
 	/*for (int i = 0; i < MEM_SIZE; i++)
@@ -283,12 +282,39 @@ void myfree(void * pointer, const char * file, int line)
 		{
 			// Error, pointer was inside of an allocated region
 
+			if (cur_region->status == FREED)
+			{
+				// If the region was freed, return the freed message
+				printf (
+					"%s: [%d]\n\tError.  Unable to free pointer to [0x%x].  This pointer is points to an already-freed region of memory.\n", 
+					file, 
+					line,
+					(int) pointer
+				);
+			}
+			else
+			{
+				// If the region was not free, then tell them it is inside of allocated space
+				printf (
+					"%s: [%d]\n\tError.  Unable to free pointer to [0x%x].  This pointer is points to an address that is inside of an already allocated region of memory.\n\tThe region that this pointer is in the middle of is [0x%x]\n", 
+					file, 
+					line,
+					(int) pointer,
+					(int) ptr
+				);
+			}
+
+			return;
+		}
+		if (pointer > ((int)ptr + cur_region->size) && pointer < ((int)ptr + cur_region->size + sizeof(mem_region)))
+		{
+			// Error, pointer was inside of a meta data block (mem_region)
+
 			printf (
-				"%s: [%d]\n\tError.  Unable to free pointer to [0x%x].  This pointer is points to an address that is inside of an already allocated region of memory.\n\tThe region that this pointer is in the middle of is [0x%x]\n", 
+				"%s: [%d]\n\tError.  Unable to free pointer to [0x%x].  This pointer is points to an address that is inside of used memory.\n", 
 				file, 
 				line,
-				(int) pointer,
-				(int) ptr
+				(int) pointer
 			);
 
 			return;
@@ -299,4 +325,16 @@ void myfree(void * pointer, const char * file, int line)
 		// Setting the new previous region to the current region
 		prev_region = cur_region;
 	}
+
+	// If the program was unable to return in any of the cases in the above loop, there is an
+	//		error
+	printf (
+		"%s: [%d]\n\tError.  Unable to free pointer to [0x%x].  This pointer is points to an invalid address.\n", 
+		file, 
+		line,
+		(int) pointer
+	);
+
+	return;
+
 }
