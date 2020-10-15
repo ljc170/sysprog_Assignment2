@@ -11,8 +11,6 @@
 #define true 1
 #define false 0
 
-char memory[ MEM_SIZE ];
-
 // structure used to indicate regions of memory
 //		each mem_region in memory has:
 //		(1) an int size (16bit to save space)
@@ -36,11 +34,16 @@ typedef struct _ {
 	bool status;
 } mem_region;
 
-bool no_alloc = true;
 
+// When RAM is initialized, we establish the initial condition of memory
+// i.e. set an initial mem_region struct at the start of RAM which has the size
+//		the entire RAM (minus 3 bytes), and set it to freed
+// This struct would be represented in memory as the bytes 0xfc, 0x0f, (the size) and 
+//		0x00 (the FREED status)
+// Any time an allocation happens, this initial mem_region will
+//		be subdivided into other mem_regions, followed by user data
+char memory[ MEM_SIZE ] = { 0xfc, 0x0f, 0x00 };
 
-void * my_malloc(int);
-void my_free(void *);
 
 int main ()
 {
@@ -51,7 +54,7 @@ int main ()
 		if (ptr == NULL)
 		{
 			printf("NULL! at %d\n", i);
-			return EXIT_SUCCESS;
+			return EXIT_SUCCE\nSS;
 		}
 		
 	}*/
@@ -67,15 +70,20 @@ int main ()
 		int z;
 	};
 
+	char * p = (char *)malloc( 200 );
+	free( p + 10 );
 
-	struct point * p1 = my_malloc(sizeof(struct point));
-	struct point * p2 = my_malloc(sizeof(struct point));
-	struct point * p3 = my_malloc(sizeof(struct point));
-	struct point3d * p4 = my_malloc(sizeof(struct point3d));
-	struct point * p5 = my_malloc(sizeof(struct point));
-	my_free(p4);
-	my_free(p2);
-	my_free(p3);
+
+	//malloc(5000);
+
+	struct point * p1 = malloc(sizeof(struct point));
+	struct point * p2 = malloc(sizeof(struct point));
+	struct point * p3 = malloc(sizeof(struct point));
+	struct point3d * p4 = malloc(sizeof(struct point3d));
+	struct point * p5 = malloc(sizeof(struct point));
+	free(p4 + 5);
+	free(p2);
+	free(p3);
 
 	mem_region * r1 = (mem_region *) (&memory);
 	mem_region * r2 = (mem_region *) (((int) &memory) + sizeof(mem_region) + sizeof(struct point));
@@ -91,30 +99,14 @@ int main ()
 
 	
 	
-	my_free(p5);
+	free(p5);
 	
 	
 	return EXIT_SUCCESS;
 }
 
-void * my_malloc(int size)
+void * mymalloc(int size, const char * file, int line)
 {
-	if (no_alloc)
-	{
-		// If this is the first time that my_malloc has been called, then we
-		//		need to set up intial conditions of the memory space
-		// i.e. set an initial block of memory at the start of RAM
-		//		to the size of the entire RAM, and set it to freed
-		// Any time an allocation happens, this initial mem_region will
-		//		be subdivided into other mem_regions, followed by user data
-		no_alloc = false;
-
-		// Initial memory region that is initially responsible for all RAM
-		mem_region * first_region = (mem_region *) ((int) &memory);
-		first_region->size   = MEM_SIZE - sizeof(mem_region);	 // setting size of initial region to the size of the remaining RAM
-		first_region->status = FREED;							 // setting the status of all RAM to FREED
-	}
-
 	// Offset into RAM
 	uint16_t mem_offset = 0;
 	// Start search for block of memory large enough for the current allocation
@@ -204,15 +196,29 @@ void * my_malloc(int size)
 	else
 	{
 		// Error, not enough room to allocate
+
+		printf (
+			"%s: [%d]\n\tError.  Unable to allocate [%d] bytes.  No large enough area of memory.\n", 
+			file, 
+			line, 
+			size
+		);
+
 		return NULL;
 	}
 }
 
-void my_free(void * pointer)
+void myfree(void * pointer, const char * file, int line)
 {
 	if (pointer < (int) &memory || pointer >= ((int) &memory) + MEM_SIZE)
 	{
 		// Error, invalid pointer — memory not managed by this program
+		printf (
+			"%s: [%d]\n\tError.  Unable to free pointer to [0x%x].  This pointer is points to an invalid (out of range) region of memory.\n\tEither the parameter pointer is a local variable or it was not allocated by malloc.\n", 
+			file, 
+			line,
+			(int) pointer
+		);
 	}
 
 	int mem_offset = 0;
@@ -223,6 +229,17 @@ void my_free(void * pointer)
 		void * ptr = ((int) cur_region) + sizeof(mem_region);
 		if (ptr == pointer)
 		{
+			if (cur_region->status == FREED)
+			{
+				printf (
+					"%s: [%d]\n\tError.  Unable to free pointer to [0x%x].  This pointer is points to an already-freed region of memory.\n", 
+					file, 
+					line,
+					(int) pointer
+				);
+			}
+
+
 			// If the current memory region is the region for the parameter pointer,
 			//		then we set the status of the current memory region to FREED
 			cur_region->status = FREED;
@@ -265,6 +282,15 @@ void my_free(void * pointer)
 		if (pointer > ptr && pointer < (int) ptr + cur_region->size)
 		{
 			// Error, pointer was inside of an allocated region
+
+			printf (
+				"%s: [%d]\n\tError.  Unable to free pointer to [0x%x].  This pointer is points to an address that is inside of an already allocated region of memory.\n\tThe region that this pointer is in the middle of is [0x%x]\n", 
+				file, 
+				line,
+				(int) pointer,
+				(int) ptr
+			);
+
 			return;
 		}
 
@@ -274,4 +300,3 @@ void my_free(void * pointer)
 		prev_region = cur_region;
 	}
 }
-
