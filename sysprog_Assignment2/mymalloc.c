@@ -44,66 +44,6 @@ typedef struct _ {
 //		be subdivided into other mem_regions, followed by user data
 char memory[ MEM_SIZE ] = { 0xfc, 0x0f, 0x00 };
 
-int main ()
-{
-	/*for (int i = 0; i < MEM_SIZE; i++)
-	{
-		void * ptr = my_malloc(1);
-		
-		if (ptr == NULL)
-		{
-			printf("NULL! at %d\n", i);
-			return EXIT_SUCCE\nSS;
-		}
-		
-	}*/
-
-	struct point {
-		int x;
-		int y;
-	};
-
-	struct point3d {
-		int x;
-		int y;
-		int z;
-	};
-
-	char * p = (char *)malloc( 200 );
-	free( p + 10 );
-
-
-	//malloc(5000);
-
-	struct point * p1 = malloc(sizeof(struct point));
-	struct point * p2 = malloc(sizeof(struct point));
-	struct point * p3 = malloc(sizeof(struct point));
-	struct point3d * p4 = malloc(sizeof(struct point3d));
-	struct point * p5 = malloc(sizeof(struct point));
-	free(p4 + 5);
-	free(p2);
-	free(p3);
-
-	mem_region * r1 = (mem_region *) (&memory);
-	mem_region * r2 = (mem_region *) (((int) &memory) + sizeof(mem_region) + sizeof(struct point));
-	mem_region * r3 = (mem_region *) (((int) &memory) + (sizeof(mem_region) + sizeof(struct point)) * 2);
-	mem_region * r4 = (mem_region *) (((int) &memory) + (sizeof(mem_region) + sizeof(struct point)) * 3);
-	mem_region * r5 = (mem_region *) (((int) &memory) + (sizeof(mem_region) + sizeof(struct point)) * 3 + (sizeof(mem_region) + sizeof(struct point3d)));
-
-
-	int i = 0;
-
-	p5->x = 0x69;
-	p5->y = 0x420;
-
-	
-	
-	free(p5);
-	
-	
-	return EXIT_SUCCESS;
-}
-
 void * mymalloc(int size, const char * file, int line)
 {
 	// Offset into RAM
