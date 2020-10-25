@@ -1,8 +1,8 @@
 memgrind: memgrind.o mymalloc.c
-  gcc memgrind.o mymalloc.o -0 memgrind
+  gcc memgrind.o mymalloc.o -o memgrind
   
 memgrind.o: memgrind.c mymalloc.h
-  gcc -o memgrind.c
+  gcc -c memgrind.c
   
 mymalloc.o: mymalloc.c mymalloc.h
   gcc -c mymalloc.c
